@@ -85,7 +85,7 @@ class TF_Base():
     """
     
     kwargs_def_base = {
-        'feed': [None, is_tf_tensor_or_variable],
+        'feed': [None],
         'name': ['base', is_string],
         'dropout': [0.0],
         'auto_build': [[True, False], None],
@@ -124,6 +124,8 @@ class TF_Base():
         self.feed_accepted = False
         self.feed_received = []
         self.feed_processed = []
+        self.feed_rank = 1
+        self.feed_shape = [1]
         self.calc = []
         self.calc_current = {}
         self.prop_accepted = False
@@ -202,8 +204,9 @@ class TF_Base():
     # customizable
     def feed_process(self, feed):
         feed_received = feed
-        feed_processed = tf.identity(feed_received, name='feed_processed')
-        return feed_processed
+        return feed
+        # feed_processed = tf.identity(feed_received, name='feed_processed')
+        # return feed_processed
     
     # customizable / internal
     def output_calc(self, feed=[]):
@@ -312,17 +315,21 @@ class TF_Base():
     
     # locked / external_main
     def build(self, feed=None):
-        if not (is_tf_tensor_or_variable(feed) and self.feed_check(feed)):
+        # if not is_tf_tensor_or_variable(feed):
+        #     return False
+        if not self.feed_check(feed):
             return False
         self.feed = feed
-        self.feed_rank = self.feed._rank()
-        self.feed_shape = self.feed._shape_as_list()
+        if is_tf_tensor_or_variable(self.feed):
+            self.feed_rank = self.feed._rank()
+            self.feed_shape = self.feed._shape_as_list()
         self.feed_accepted = True
         with self.get_scope(self.count):
             feed_received = tf.identity(feed, name='feed_received')
             feed_processed = self.feed_process(feed_received)
-            self.feed_rank = feed_processed._rank()
-            self.feed_shape = feed_processed._shape_as_list()
+            if is_tf_tensor_or_variable(feed_processed):
+                self.feed_rank = feed_processed._rank()
+                self.feed_shape = feed_processed._shape_as_list()
         self.prop_accepted = self.prop_process_base() and self.prop_process()
         if not self.prop_accepted:
             return False
