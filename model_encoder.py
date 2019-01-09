@@ -9,68 +9,85 @@ from tf_utils_190108.tf_controller import *
 import sys, os, time, datetime
 
 
-def encoder(inputs):
-    x = inputs
-    s = TF_Series(
-        inputs=x,
-        name='0_CNN',
-        layer_kwargs={
-            'activator': tf.nn.relu,
-            'out_dim': 32,
-            'strides': 1,
-            'filter_shape': 3,
-        },
-        layers=[
-            TF_CNN(False, out_dim=32, batch_norm=True),
-            TF_CNN(False, out_dim=24, batch_norm=True, pooling=4),
-            TF_CNN(False, out_dim=20, batch_norm=True, pooling=[2,1]),
-            TF_CNN(False, out_dim=18, pooling=[1,2]),
-            TF_CNN(False, out_dim=16, batch_norm=True, pooling=None),
-            TF_CNN(False, out_dim=14, pooling=2),
-            TF_CNN(False, out_dim=12, pooling=2),
-        ],
-    )
-    x = s.output
-    cnn_output = x
-
-    x = tf.unstack(
-        value=x,
-        axis=1,
-        name='rnn_feed',
-    )
-    x = [
-        TF_RNN(
-            feed=v,
-            name='1_RNN_' + str(i),
+class Encoder():
+    def __init__(self):
+        self.layers = []
+        self.output = None
+        return None
+    
+    def __call__(self, inputs)
+        x = inputs
+        
+        # CNN SERIES
+        s = TF_Series(
+            inputs=x,
+            name='0_CNN',
+            layer_kwargs={
+                'activator': tf.nn.relu,
+                'out_dim': 32,
+                'strides': 1,
+                'filter_shape': 3,
+            },
+            layers=[
+                TF_CNN(False, out_dim=32, batch_norm=True),
+                TF_CNN(False, out_dim=24, batch_norm=True, pooling=4),
+                TF_CNN(False, out_dim=20, batch_norm=True, pooling=[2,1]),
+                TF_CNN(False, out_dim=18, pooling=[1,2]),
+                TF_CNN(False, out_dim=16, batch_norm=True, pooling=None),
+                TF_CNN(False, out_dim=14, pooling=2),
+                TF_CNN(False, out_dim=12, pooling=2),
+            ],
+        )
+        self.cnn_series = s
+        self.layers.append(**s.layers)
+        x = s.output
+        cnn_output = x
+        
+        # RNN LAYER
+        x = tf.reshape(
+            x,
+            shape=[-1, tf.shape(x)[1] * tf.shape(x)[2], tf.shape(x)[3]]
+            name='rnn_feed',
+        )
+        x = TF_RNN(
+            feed=x,
+            name='1_RNN',
             bidirectional=True,
             sequence_length=None,
             cell_count=[24, 12],
             cell_type='lstm',
         )
-        for i, v in enumerate(x)
-    ]
-    rnn_layers = x
-    x = [v.output for v in x]
-    rnn_outputs = x
-    x = tf.stack(
-        values=x,
-        axis=1,
-        name='encoder_output',
-    )
-    # x
-    # s = TF_Series(
-    #     inputs=x,
-    #     name='1_RNN',
-    #     layer_kwargs={
-            
-    #     },
-    #     layers=[
-    #         TF_RNN()
-    #     ],
-    # )
+        # OLD STACKED RNN LAYERS
+        # x = tf.unstack(
+        #     value=x,
+        #     axis=1,
+        #     name='rnn_feed',
+        # )
+        # x = [
+        #     TF_RNN(
+        #         feed=v,
+        #         name='1_RNN_' + str(i),
+        #         bidirectional=True,
+        #         sequence_length=None,
+        #         cell_count=[24, 12],
+        #         cell_type='lstm',
+        #     )
+        #     for i, v in enumerate(x)
+        # ]
+        # rnn_layers = x
+        # x = [v.output for v in x]
+        # rnn_outputs = x
+        # x = tf.stack(
+        #     values=x,
+        #     axis=1,
+        #     name='encoder_output',
+        # )
+        
+        self.output = x
+        return self.output
     
-    encoder_output = x
-    return encoder_output
+    def get_output(self):
+        return self.output
 
 
 # op_training = tf.assign(state_training, True)

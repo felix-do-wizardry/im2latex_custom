@@ -6,31 +6,31 @@ from model_decoder_lib import *
 
 # recreate attention mechanism
 # img = tf.placeholder(tf.float32, shape=[None, 200, 12, 20])
-def decoder(inputs, attn_cell_config, config, E, start_token, vocab, formula, formula_length):
+def decoder(inputs, config, E, start_token, vocab, formula, formula_length):
     attn_meca = AttentionMechanism(
         img=inputs,
-        dim_e=attn_cell_config["dim_e"],
+        dim_e=config.attn_cell_config["dim_e"],
         tiles=1,
     )
     recu_cell = tf.nn.rnn_cell.LSTMCell(
-        attn_cell_config["num_units"],
+        config.attn_cell_config["num_units"],
         reuse=tf.AUTO_REUSE,
     )
     attn_cell = AttentionCell(
         recu_cell,
         attn_meca,
-        config['dropout'],
-        attn_cell_config,
-        config['n_tok'],
+        config.dropout,
+        config.attn_cell_config,
+        config.n_tok,
     )
 
     # if self._config.decoding == "greedy":
     decoder_cell = GreedyDecoderCell(
         E,
         attn_cell,
-        config['batch_size'],
+        config.batch_size,
         start_token,
-        vocab['id_end']
+        vocab.id_end,
     )
 
     # elif self._config.decoding == "beam_search":
@@ -41,9 +41,9 @@ def decoder(inputs, attn_cell_config, config, E, start_token, vocab, formula, fo
     embeddings = get_embeddings(
         formula,
         E,
-        attn_cell_config['dim_embeddings'],
+        config.attn_cell_config['dim_embeddings'],
         start_token,
-        config['batch_size'],
+        config.batch_size,
     )
     
     train_outputs, _ = tf.nn.dynamic_rnn(
@@ -54,7 +54,7 @@ def decoder(inputs, attn_cell_config, config, E, start_token, vocab, formula, fo
     
     test_outputs, _ = dynamic_decode(
         decoder_cell,
-        config['max_length_formula']+1
+        config.max_length_formula+1
     )
     
     return train_outputs, test_outputs

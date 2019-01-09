@@ -2,3 +2,7 @@
 data/images_test
 data/images_train
 data/images_val
+*.driveupload
+*.FELIX-ASUS-PC
+*.pyc
+*.pyc

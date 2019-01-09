@@ -619,6 +619,7 @@ class TF_Series():
                 **self.kwargs['layer_kwargs'],
                 **{
                     'name': '{}/{}'.format(self.name, i),
+                    'auto_build': False,
                 },
             }
             layer.reinit(**_kwargs)

@@ -100,14 +100,17 @@ class TF_Base():
     # locked / internal
     def __init__(self, *args, **kwargs):
         self.kwargs_def = {
-            ** self.kwargs_def_base,
-            ** self.kwargs_def_custom,
+            **self.kwargs_def_base,
+            **self.kwargs_def_custom,
         }
-        if len(args) >= 1 and args[0] == False:
+        self.kwargs = {**kwargs}
+        if len(args) >= 1:
+            # dont init
             kwargs.update({'auto_build': False})
+            return None
         self.kwargs = {
-            ** {k: None for k in self.kwargs_def},
-            ** kwargs
+            **{k: None for k in self.kwargs_def},
+            **self.kwargs,
         }
         for k in self.kwargs_def:
             self.arg_process(
@@ -135,6 +138,8 @@ class TF_Base():
         self.outputs_final = []
         self.dropout_skip = False
         self.l2_loss = 0
+        self.output = None
+        self.built_once = False
         if self.auto_build and self.feed != None:
             self.build(self.feed)
         return None
@@ -144,6 +149,7 @@ class TF_Base():
             **kwargs,
             **self.kwargs,
         }
+        # _kwargs.update((k,v) for k,v in self.kwargs.items() if v is not None)
         self.__init__(*args, **_kwargs)
         return True
     
@@ -357,6 +363,7 @@ class TF_Base():
             self.outputs_final.append(self.output_final)
             self.calc.append(self.calc_current)
         self.count += 1
+        self.built_once = True
         return True
     
     # locked
