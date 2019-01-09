@@ -32,7 +32,7 @@ class Decoder():
             self.attn_meca,
             self.config.dropout,
             self.config.attn_cell_config,
-            self.config.n_tok,
+            self.vocab.n_tok,
         )
 
         # if self._config.decoding == "greedy":

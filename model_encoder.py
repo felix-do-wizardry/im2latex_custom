@@ -16,6 +16,18 @@ class Encoder():
         return None
     
     def __call__(self, inputs):
+        
+        cnn_config_set = {
+            'out_dim': [12, 16, 20, 24, 28, 32, 36],
+            'batch_norm': [True, True, True, False, True, False, False],
+            'pooling': [None, 4, [2,1], [1,2], None, 2, 2],
+        }
+        cnn_layer_count = min([len(v) for k, v in cnn_config_set.items()])
+        cnn_config = [
+            {k: v[i] for k, v in cnn_config_set.items()}
+            for i in range(cnn_layer_count)
+        ]
+        
         x = inputs
         
         # CNN SERIES
@@ -23,40 +35,48 @@ class Encoder():
             inputs=x,
             name='0_CNN',
             layer_kwargs={
-                'activator': tf.nn.relu,
-                'out_dim': 32,
-                'strides': 1,
                 'filter_shape': 3,
+                'strides': 1,
+                'activator': tf.nn.relu,
+                # 'out_dim': 32,
             },
             layers=[
-                TF_CNN(False, out_dim=32, batch_norm=True),
-                TF_CNN(False, out_dim=24, batch_norm=True, pooling=4),
-                TF_CNN(False, out_dim=20, batch_norm=True, pooling=[2,1]),
-                TF_CNN(False, out_dim=18, pooling=[1,2]),
-                TF_CNN(False, out_dim=16, batch_norm=True, pooling=None),
-                TF_CNN(False, out_dim=14, pooling=2),
-                TF_CNN(False, out_dim=12, pooling=2),
+                TF_CNN(False, **cfg) for cfg in cnn_config
             ],
+            # layers=[
+            #     TF_CNN(False, out_dim=32, batch_norm=True),
+            #     TF_CNN(False, out_dim=24, batch_norm=True, pooling=4),
+            #     TF_CNN(False, out_dim=20, batch_norm=True, pooling=[2,1]),
+            #     TF_CNN(False, out_dim=18, pooling=[1,2]),
+            #     TF_CNN(False, out_dim=16, batch_norm=True, pooling=None),
+            #     TF_CNN(False, out_dim=14, pooling=2),
+            #     TF_CNN(False, out_dim=12, pooling=2),
+            # ],
         )
         self.cnn_series = s
-        self.layers.append(**s.layers)
+        self.layers += s.layers
         x = s.output
         cnn_output = x
         
-        # RNN LAYER
         x = tf.reshape(
             x,
-            shape=[-1, tf.shape(x)[1] * tf.shape(x)[2], tf.shape(x)[3]],
-            name='rnn_feed',
+            shape=[
+                -1,
+                tf.shape(x)[1] * tf.shape(x)[2],
+                cnn_config[-1]['out_dim']
+            ],
+            name='encoder_output',
         )
-        x = TF_RNN(
-            feed=x,
-            name='1_RNN',
-            bidirectional=True,
-            sequence_length=None,
-            cell_count=[24, 12],
-            cell_type='lstm',
-        )
+        
+        # RNN LAYER // DEPRECATED
+        # x = TF_RNN(
+        #     feed=x,
+        #     name='1_RNN',
+        #     bidirectional=True,
+        #     sequence_length=None,
+        #     cell_count=[24, 12],
+        #     cell_type='lstm',
+        # )
         # OLD STACKED RNN LAYERS
         # x = tf.unstack(
         #     value=x,

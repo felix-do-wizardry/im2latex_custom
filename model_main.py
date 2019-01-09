@@ -70,7 +70,7 @@ E = tf.get_variable(
 # inputs
 inputs = tf.placeholder(tf.float32, shape=[None, None, None, 1], name='inputs')
 # labels
-formula = tf.placeholder(tf.int32, shape=[None, vocab.n_tok], name='labels')
+formula = tf.placeholder(tf.int32, shape=[None, None], name='labels')
 formula_length = tf.placeholder(tf.int32, shape=(None, ), name='labels_length')
 
 learning_rate = tf.placeholder(tf.float32, shape=(), name='learning_rate')
@@ -78,10 +78,12 @@ dropout = tf.placeholder(tf.float32, shape=(), name='dropout')
 training = tf.placeholder(tf.bool, shape=(), name="training")
 
 
-# encoder_output
+# get encoder and decoder
 encoder = Encoder()
-encoder_output = encoder(inputs)
 decoder = Decoder()
+
+# get output from encoder and decoder
+encoder_output = encoder(inputs)
 pred_train, pred_test = decoder(
     encoder_output,
     config,
@@ -143,7 +145,7 @@ for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
         inputs: _img,
         dropout: 0.2,
         training: True,
-        learning_rate: 0.02,
+        learning_rate: 0.0001,
     }
     if _formula is not None:
         _formula, _formula_length = pad_batch_formulas(
@@ -158,12 +160,15 @@ for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
 
 
 fd = feed_dicts[0]
-run_loss = sess.run(loss, feed_dict=fd)
+sess.run(tf.global_variables_initializer())
+run_loss = sess.run(loss, fd)
+sess.run(op_train, fd)
+print(sess.run(loss, fd))
 print('initial loss: {}', run_loss)
 print('DONE TESTING! EXITING')
 # sess.run([op_train, loss], feed_dict=fd)
 
-
+print(sess.run(pred_test, fd))
 
 # def _run_epoch(self, config, train_set, val_set, epoch, lr_schedule):
 #     """Performs an epoch of training
