@@ -15,7 +15,7 @@ class Encoder():
         self.output = None
         return None
     
-    def __call__(self, inputs)
+    def __call__(self, inputs):
         x = inputs
         
         # CNN SERIES
@@ -46,7 +46,7 @@ class Encoder():
         # RNN LAYER
         x = tf.reshape(
             x,
-            shape=[-1, tf.shape(x)[1] * tf.shape(x)[2], tf.shape(x)[3]]
+            shape=[-1, tf.shape(x)[1] * tf.shape(x)[2], tf.shape(x)[3]],
             name='rnn_feed',
         )
         x = TF_RNN(
