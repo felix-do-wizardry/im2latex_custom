@@ -45,7 +45,6 @@ class Decoder():
             self.E,
             self.config.attn_cell_config['dim_embeddings'],
             self.start_token,
-            self.config.batch_size,
         )
         
         if self.config.decoding == "greedy":
