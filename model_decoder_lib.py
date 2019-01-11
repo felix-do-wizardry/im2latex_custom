@@ -410,8 +410,8 @@ def get_embeddings(formula, E, dim, start_token):
         embeddings_train: tensor
 
     """
-    batch_size = tf.shape(formula_)[0]
     formula_ = tf.nn.embedding_lookup(E, formula)
+    batch_size = tf.shape(formula_)[0]
     start_token_ = tf.reshape(start_token, [1, 1, dim])
     start_tokens = tf.tile(start_token_, multiples=[batch_size, 1, 1])
     embeddings = tf.concat([start_tokens, formula_[:, :-1, :]], axis=1)
