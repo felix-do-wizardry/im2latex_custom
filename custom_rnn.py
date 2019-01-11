@@ -4,6 +4,8 @@ import numpy as np
 import collections
 import os, sys, time, datetime
 
+AttentionState = collections.namedtuple("AttentionState", ("cell_state", "o"))
+
 class AttentionLSTMCell(tf.nn.rnn_cell.RNNCell):
     def __init__(
         self,
@@ -346,7 +348,6 @@ a, b = sess.run([pred, states], fd)
 sess.close()
 
 
-AttentionState = collections.namedtuple("AttentionState", ("cell_state", "o"))
 
 
 # class AttentionMechanism(object):

@@ -5,7 +5,7 @@ import collections
 from tensorflow.nn.rnn_cell import RNNCell, LSTMCell
 
 from tensorflow.contrib.framework import nest
-from tensorflow.contrib.ops import rnn
+# from tensorflow.contrib.ops import rnn
 
 
 class AttentionMechanism(object):

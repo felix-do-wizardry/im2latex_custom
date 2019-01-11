@@ -164,142 +164,51 @@ for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
         fd[formula_length] = _formula_length
     feed_dicts.append(fd)
 
-all_img = []
-all_formula = []
-for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
-    all_img.append(_img)
-    if _formula is not None:
-        _formula, _formula_length = pad_batch_formulas(
-            _formula,
-            vocab.id_pad,
-            vocab.id_end
-        )
-    all_formula.append(_formula)
+# all_img = []
+# all_formula = []
+# for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
+#     all_img.append(_img)
+#     if _formula is not None:
+#         _formula, _formula_length = pad_batch_formulas(
+#             _formula,
+#             vocab.id_pad,
+#             vocab.id_end
+#         )
+#     all_formula.append(_formula)
 
 
-np.save('np_formula', np.array(all_formula))
-np.save('np_img', np.array(all_img))
+# np.save('np_formula', np.array(all_formula))
+# np.save('np_img', np.array(all_img))
 
-fd = feed_dicts[0]
+# fd = feed_dicts[0]
 sess.run(tf.global_variables_initializer())
 run_loss = sess.run(loss, fd)
-sess.run(op_train, fd)
-print(sess.run(loss, fd))
+# sess.run(op_train, fd)
+# print(sess.run(loss, fd))
 print('initial loss: {}', run_loss)
-print('DONE TESTING! EXITING')
+# print('DONE TESTING! EXITING')
 # sess.run([op_train, loss], feed_dict=fd)
 
-print(sess.run(pred_test, fd))
+model_timecode = time.strftime("%y%m%d_%H%M%S", time.gmtime())
+saver = tf.train.Saver()
 
-# def _run_epoch(self, config, train_set, val_set, epoch, lr_schedule):
-#     """Performs an epoch of training
-
-#     Args:
-#         config: Config instance
-#         train_set: Dataset instance
-#         val_set: Dataset instance
-#         epoch: (int) id of the epoch, starting at 0
-#         lr_schedule: LRSchedule instance that takes care of learning proc
-
-#     Returns:
-#         score: (float) model will select weights that achieve the highest
-#             score
-
-#     """
-#     # logging
-#     batch_size = config.batch_size
-#     nbatches = (len(train_set) + batch_size - 1) // batch_size
-#     # prog = Progbar(nbatches)
-
-#     # iterate over dataset
-#     for i, (img, formula) in enumerate(minibatches(train_set, batch_size)):
-#         # get feed dict
-#         fd = self._get_feed_dict(img, training=True, formula=formula,
-#                 lr=lr_schedule.lr, dropout=config.dropout)
-
-#         # update step
-#         _, loss_eval = self.sess.run([self.train_op, self.loss],
-#                 feed_dict=fd)
-#         # prog.update(i + 1, [("loss", loss_eval), ("perplexity",
-#         #         np.exp(loss_eval)), ("lr", lr_schedule.lr)])
-
-#         # update learning rate
-#         lr_schedule.update(batch_no=epoch*nbatches + i)
-
-#     # logging
-#     self.logger.info("- Training: {}".format(prog.info))
-
-#     # evaluation
-#     config_eval = Config({"dir_answers": self._dir_output + "formulas_val/",
-#             "batch_size": config.batch_size})
-#     scores = self.evaluate(config_eval, val_set)
-#     score = scores[config.metric_val]
-#     lr_schedule.update(score=score)
-
-#     return score
+def start_training(epoch=20, model_save_iter=10):
+    for i in range(epoch):
+        _ = [sess.run(op_train, fd) for fd in feed_dicts]
+        run_loss = np.mean([sess.run(loss, fd) for fd in feed_dicts])
+        print('epoch: {}, loss: {}'.format(i, run_loss))
+        if (i + 1) % model_save_iter == 0:
+            save_path = saver.save(
+                sess,
+                '/saved_models/{}.ckpt'.format(model_timecode)
+            )
+            print('model checkpoint saved at {}'.format(save_path))
+    return True
 
 
-# exit()
-# clear;python
+start_training()
 
-# from tf_utils_190108.tf_builder import *
-# from tf_utils_190108.tf_controller import *
-# import sys, os, time, datetime
+print('Done. Exiting!')
 
-# a = tf.tuple(
-#     [
-#         tf.placeholder(tf.float32, [None, 80, 32])
-#         for _ in range(4)
-#     ],
-#     name='input_tuple',
-# )
-# c = tf.nn.rnn_cell.LSTMCell(24)
-# d = tf.nn.dynamic_rnn(
-#     cell=c,
-#     inputs=a,
-#     sequence_length=None,
-#     initial_state=None,
-#     dtype=tf.float32,
-# )
-# b = TF_RNN(
-#     feed=a,
-#     bidirectional=True,
-#     cell_type='lstm',
-#     cell_count=[24,12],
-#     sequence_length=None,
-# )
-
-
-# from six.moves import xrange
-# import math
-# min_timescale=1.0
-# max_timescale=1.0e4
-# x = tf.placeholder(tf.float32, [None, 11, 23, 8])
-# x = tf.placeholder(tf.float32, [None, None, None, 8])
-# static_shape = x.get_shape().as_list()
-# num_dims = len(static_shape) - 2
-# channels = tf.shape(x)[-1]
-# num_timescales = channels // (num_dims * 2)
-# log_timescale_increment = (
-#         math.log(float(max_timescale) / float(min_timescale)) /
-#         (tf.to_float(num_timescales) - 1))
-# inv_timescales = min_timescale * tf.exp(
-#         tf.to_float(tf.range(num_timescales)) * -log_timescale_increment)
-# for dim in xrange(num_dims):
-#     length = tf.shape(x)[dim + 1]
-#     position = tf.to_float(tf.range(length))
-#     scaled_time = tf.expand_dims(position, 1) * tf.expand_dims(
-#             inv_timescales, 0)
-#     signal = tf.concat([tf.sin(scaled_time), tf.cos(scaled_time)], axis=1)
-#     prepad = dim * 2 * num_timescales
-#     postpad = channels - (dim + 1) * 2 * num_timescales
-#     signal = tf.pad(signal, [[0, 0], [prepad, postpad]])
-#     for _ in xrange(1 + dim):
-#         signal = tf.expand_dims(signal, 0)
-#     for _ in xrange(num_dims - 1 - dim):
-#         signal = tf.expand_dims(signal, -2)
-#     x += signal
-
-
-
+# print(sess.run(pred_test, fd))
 
