@@ -5,4 +5,5 @@ data/images_val
 *.driveupload
 *.FELIX-ASUS-PC
 *.pyc
-*.pyc
+.cpython-36.pyc
+*__pycache__*

@@ -3,29 +3,34 @@ import numpy as np
 
 from model_decoder_lib import *
 
+# from model.components.greedy_decoder_cell import GreedyDecoderCell
+# from model.components.beam_search_decoder_cell import BeamSearchDecoderCell
 
 # recreate attention mechanism
 # img = tf.placeholder(tf.float32, shape=[None, 200, 12, 20])
 class Decoder():
-    def __init__(self):
+    def __init__(self, config, vocab):
+        self.config = config
+        self.vocab = vocab
+        # self._n_tok = n_tok
+        # self._id_end = id_end
+        self.tiles = 1 if self.config.decoding == "greedy" else self.config.beam_size
         return None
     
-    def __call__(self, inputs, config, E, start_token, vocab, formula, formula_length):
+    def __call__(self, inputs, formula, formula_length, E, start_token):
         self.inputs = inputs
-        self.config = config
         self.E = E
         self.start_token = start_token
-        self.vocab = vocab
         self.formula = formula
         self.formula_length = formula_length
-        self.attn_meca = AttentionMechanism(
-            img=self.inputs,
-            dim_e=self.config.attn_cell_config["dim_e"],
-            tiles=1,
-        )
         self.recu_cell = tf.nn.rnn_cell.LSTMCell(
             self.config.attn_cell_config["num_units"],
             reuse=tf.AUTO_REUSE,
+        )
+        self.attn_meca = AttentionMechanism(
+            img=self.inputs,
+            dim_e=self.config.attn_cell_config["dim_e"],
+            tiles=self.tiles,
         )
         self.attn_cell = AttentionCell(
             self.recu_cell,
@@ -34,20 +39,6 @@ class Decoder():
             self.config.attn_cell_config,
             self.vocab.n_tok,
         )
-
-        # if self._config.decoding == "greedy":
-        self.decoder_cell = GreedyDecoderCell(
-            self.E,
-            self.attn_cell,
-            self.config.batch_size,
-            self.start_token,
-            self.vocab.id_end,
-        )
-
-        # elif self._config.decoding == "beam_search":
-        # decoder_cell = BeamSearchDecoderCell(E, attn_cell, batch_size,
-        #         start_token, self._id_end, self._config.beam_size,
-        #         self._config.div_gamma, self._config.div_prob)
         
         self.embeddings = get_embeddings(
             self.formula,
@@ -56,6 +47,26 @@ class Decoder():
             self.start_token,
             self.config.batch_size,
         )
+        
+        if self.config.decoding == "greedy":
+            self.decoder_cell = GreedyDecoderCell(
+                self.E,
+                self.attn_cell,
+                self.config.batch_size,
+                self.start_token,
+                self.vocab.id_end,
+            )
+        elif self.config.decoding == "beam_search":
+            self.decoder_cell = BeamSearchDecoderCell(
+                self.E,
+                self.attn_cell,
+                self.config.batch_size,
+                self.start_token,
+                self.vocab.id_end,
+                self.config.beam_size,
+                self.config.div_gamma,
+                self.config.div_prob,
+            )
         
         self.train_outputs, self.train_states = tf.nn.dynamic_rnn(
             self.attn_cell,

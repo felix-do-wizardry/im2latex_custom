@@ -77,21 +77,28 @@ learning_rate = tf.placeholder(tf.float32, shape=(), name='learning_rate')
 dropout = tf.placeholder(tf.float32, shape=(), name='dropout')
 training = tf.placeholder(tf.bool, shape=(), name="training")
 
-
+# config cnn (out_dim, batch_norm, pooling)
+config_cnn_set = [
+    (12, True, None),
+    (16, True, 4),
+    (20, True, [2,1]),
+    (24, False, [1,2]),
+    (28, True, None),
+    (32, False, 2),
+    (36, False, 2),
+]
 # get encoder and decoder
-encoder = Encoder()
-decoder = Decoder()
+encoder = Encoder(config, config_cnn_set)
+decoder = Decoder(config, vocab)
 
 # get output from encoder and decoder
 encoder_output = encoder(inputs)
 pred_train, pred_test = decoder(
     encoder_output,
-    config,
-    E,
-    start_token,
-    vocab,
     formula,
     formula_length,
+    E,
+    start_token,
 )
 
 losses = tf.nn.sparse_softmax_cross_entropy_with_logits(
@@ -157,7 +164,21 @@ for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
         fd[formula_length] = _formula_length
     feed_dicts.append(fd)
 
+all_img = []
+all_formula = []
+for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
+    all_img.append(_img)
+    if _formula is not None:
+        _formula, _formula_length = pad_batch_formulas(
+            _formula,
+            vocab.id_pad,
+            vocab.id_end
+        )
+    all_formula.append(_formula)
 
+
+np.save('np_formula', np.array(all_formula))
+np.save('np_img', np.array(all_img))
 
 fd = feed_dicts[0]
 sess.run(tf.global_variables_initializer())

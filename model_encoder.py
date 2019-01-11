@@ -8,25 +8,39 @@ from tf_utils_190108.tf_builder import *
 from tf_utils_190108.tf_controller import *
 import sys, os, time, datetime
 
+from model.components.positional import add_timing_signal_nd
 
 class Encoder():
-    def __init__(self):
+    def __init__(
+        self,
+        config,
+        config_cnn=[],
+        config_cnn_key=['out_dim', 'batch_norm', 'pooling'],
+    ):
+        # self.config_cnn_set = [
+        #     (12, True, None),
+        #     (16, True, 4),
+        #     (20, True, [2,1]),
+        #     (24, False, [1,2]),
+        #     (28, True, None),
+        #     (32, False, 2),
+        #     (36, False, 2),
+        # ]
+        self.config_cnn_set = config_cnn
+        self.config_cnn_key = config_cnn_key
+        self.config_cnn = [
+            { k: v[i] for i, k in enumerate(self.config_cnn_key) }
+            for v in self.config_cnn_set
+        ]
+        self.cnn_layer_count = len(self.config_cnn_set)
+        self.cnn_out_dim_final = 1
+        
         self.layers = []
         self.output = None
+        self.config = config
         return None
     
     def __call__(self, inputs):
-        
-        cnn_config_set = {
-            'out_dim': [12, 16, 20, 24, 28, 32, 36],
-            'batch_norm': [True, True, True, False, True, False, False],
-            'pooling': [None, 4, [2,1], [1,2], None, 2, 2],
-        }
-        cnn_layer_count = min([len(v) for k, v in cnn_config_set.items()])
-        cnn_config = [
-            {k: v[i] for k, v in cnn_config_set.items()}
-            for i in range(cnn_layer_count)
-        ]
         
         x = inputs
         
@@ -41,17 +55,8 @@ class Encoder():
                 # 'out_dim': 32,
             },
             layers=[
-                TF_CNN(False, **cfg) for cfg in cnn_config
+                TF_CNN(False, **cfg) for cfg in self.config_cnn
             ],
-            # layers=[
-            #     TF_CNN(False, out_dim=32, batch_norm=True),
-            #     TF_CNN(False, out_dim=24, batch_norm=True, pooling=4),
-            #     TF_CNN(False, out_dim=20, batch_norm=True, pooling=[2,1]),
-            #     TF_CNN(False, out_dim=18, pooling=[1,2]),
-            #     TF_CNN(False, out_dim=16, batch_norm=True, pooling=None),
-            #     TF_CNN(False, out_dim=14, pooling=2),
-            #     TF_CNN(False, out_dim=12, pooling=2),
-            # ],
         )
         self.cnn_series = s
         self.layers += s.layers
@@ -63,45 +68,14 @@ class Encoder():
             shape=[
                 -1,
                 tf.shape(x)[1] * tf.shape(x)[2],
-                cnn_config[-1]['out_dim']
+                self.config_cnn[-1]['out_dim']
             ],
             name='encoder_output',
         )
         
-        # RNN LAYER // DEPRECATED
-        # x = TF_RNN(
-        #     feed=x,
-        #     name='1_RNN',
-        #     bidirectional=True,
-        #     sequence_length=None,
-        #     cell_count=[24, 12],
-        #     cell_type='lstm',
-        # )
-        # OLD STACKED RNN LAYERS
-        # x = tf.unstack(
-        #     value=x,
-        #     axis=1,
-        #     name='rnn_feed',
-        # )
-        # x = [
-        #     TF_RNN(
-        #         feed=v,
-        #         name='1_RNN_' + str(i),
-        #         bidirectional=True,
-        #         sequence_length=None,
-        #         cell_count=[24, 12],
-        #         cell_type='lstm',
-        #     )
-        #     for i, v in enumerate(x)
-        # ]
-        # rnn_layers = x
-        # x = [v.output for v in x]
-        # rnn_outputs = x
-        # x = tf.stack(
-        #     values=x,
-        #     axis=1,
-        #     name='encoder_output',
-        # )
+        if self.config.positional_embeddings:
+            # from tensor2tensor lib - positional embeddings
+            x = add_timing_signal_nd(x)
         
         self.output = x
         return self.output
