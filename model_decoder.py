@@ -22,6 +22,7 @@ class Decoder():
         self.E = E
         self.start_token = start_token
         self.formula = formula
+        self.tiled_batch_size = tf.shape(self.formula)[0]
         self.formula_length = formula_length
         self.recu_cell = tf.nn.rnn_cell.LSTMCell(
             self.config.attn_cell_config["num_units"],
@@ -45,13 +46,14 @@ class Decoder():
             self.E,
             self.config.attn_cell_config['dim_embeddings'],
             self.start_token,
+            self.tiled_batch_size
         )
         
         if self.config.decoding == "greedy":
             self.decoder_cell = GreedyDecoderCell(
                 self.E,
                 self.attn_cell,
-                self.config.batch_size,
+                self.tiled_batch_size,
                 self.start_token,
                 self.vocab.id_end,
             )
@@ -59,7 +61,7 @@ class Decoder():
             self.decoder_cell = BeamSearchDecoderCell(
                 self.E,
                 self.attn_cell,
-                self.config.batch_size,
+                self.tiled_batch_size,
                 self.start_token,
                 self.vocab.id_end,
                 self.config.beam_size,
