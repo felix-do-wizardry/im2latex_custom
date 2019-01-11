@@ -395,7 +395,7 @@ def embedding_initializer():
 
 
 
-def get_embeddings(formula, E, dim, start_token, batch_size):
+def get_embeddings(formula, E, dim, start_token):
     """Returns the embedding of the n-1 first elements in the formula concat
     with the start token
 
@@ -410,6 +410,7 @@ def get_embeddings(formula, E, dim, start_token, batch_size):
         embeddings_train: tensor
 
     """
+    batch_size = tf.shape(formula_)[0]
     formula_ = tf.nn.embedding_lookup(E, formula)
     start_token_ = tf.reshape(start_token, [1, 1, dim])
     start_tokens = tf.tile(start_token_, multiples=[batch_size, 1, 1])
