@@ -136,14 +136,16 @@ update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 with tf.control_dependencies(update_ops):
     op_train = optimizer.minimize(loss)
 
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())
 
 # for tensorboard
 timecode = time.strftime("%y%m%d_%H%M%S", time.gmtime())
 fileWriter = tf.summary.FileWriter('tensorboard/' + timecode, tf.get_default_graph())
 fileWriter.flush()
-# tf.summary.scalar("loss", loss)
+
+print('graph saved to tensorboard')
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
 
 feed_dicts = []
 batch_size = config.batch_size
@@ -179,6 +181,8 @@ for i, (_img, _formula) in enumerate(minibatches(train_set, batch_size)):
 
 # np.save('np_formula', np.array(all_formula))
 # np.save('np_img', np.array(all_img))
+
+print('start training')
 
 # fd = feed_dicts[0]
 sess.run(tf.global_variables_initializer())
