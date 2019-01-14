@@ -186,6 +186,7 @@ print('start training')
 
 # fd = feed_dicts[0]
 sess.run(tf.global_variables_initializer())
+fd = feed_dicts[0]
 run_loss = sess.run(loss, fd)
 # sess.run(op_train, fd)
 # print(sess.run(loss, fd))
